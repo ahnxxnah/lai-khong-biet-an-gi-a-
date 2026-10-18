@@ -14,12 +14,23 @@
 .price-sub{font-size:12px;color:var(--muted)} .wide-note{border-radius:10px;background:#fff8e8;padding:9px 12px;color:#6f5338;margin:12px 0}
 #comboEntries .form-row,#inline-place-menu .form-row{margin:6px 0}
 @media(max-width:500px){.panel{padding:13px}.inline-edit .grid{grid-template-columns:1fr}}
+
+/* Nhập/xuất dữ liệu */
+.primary-nav{flex-wrap:wrap}.primary-nav button{min-width:0}
+#dataArea .transfer-modes{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+#dataArea .transfer-modes label{display:flex;align-items:flex-start;gap:7px;line-height:1.45}
+#dataArea .transfer-modes input[type=radio]{flex:0 0 18px;width:18px;height:18px;padding:0;margin:2px 0 0;accent-color:var(--primary)}
+#dataArea .transfer-modes label>span{flex:1;min-width:0;overflow-wrap:break-word}
+#dataArea .summary .metric{min-width:135px}
+#dataArea #importPreview{margin:12px 0;overflow-wrap:anywhere}
+#dataArea .import-warning{color:var(--red);font-weight:650}
+@media(max-width:520px){.primary-nav{gap:6px}.primary-nav button{font-size:12px;padding:11px 5px}}
 </style>
 </head>
 <body>
 <header><div class="wrap"><h1>🍜 LẠI KHÔNG BIẾT ĂN GÌ À?</h1><p>Lên kế hoạch ăn uống · Tính hóa đơn · So sánh giá mua sắm</p></div></header>
 <main>
-<nav class="primary-nav" aria-label="Khu vực ứng dụng"><button type="button" class="active" data-main="food" onclick="switchMain('food')">🍽️ ĂN UỐNG</button><button type="button" data-main="shop" onclick="switchMain('shop')">🛍️ MUA SẮM</button></nav>
+<nav class="primary-nav" aria-label="Khu vực ứng dụng"><button type="button" class="active" data-main="food" onclick="switchMain('food')">🍽️ ĂN UỐNG</button><button type="button" data-main="shop" onclick="switchMain('shop')">🛍️ MUA SẮM</button><button type="button" data-main="data" onclick="switchMain('data')">💾 DỮ LIỆU</button></nav>
 <div id="foodArea">
   <nav class="subnav" aria-label="Mục ăn uống"><button type="button" class="active" data-foodtab="plan" onclick="foodTab('plan')">✨ Kế hoạch & địa điểm</button><button type="button" data-foodtab="order" onclick="foodTab('order')">🧾 Check bill gọi đồ</button><button type="button" data-foodtab="history" onclick="foodTab('history')">🕘 Lịch sử</button></nav>
   <section id="food-plan" class="panel">
@@ -106,6 +117,35 @@
     <label for="billSearch">Tìm mặt hàng trên hóa đơn</label><input id="billSearch" class="search searchbar" placeholder="Tên sản phẩm..." oninput="renderShopBill()"><div id="billRows"></div><div id="billTotals"></div><div class="actions"><button type="button" class="danger" onclick="clearShopBill()">Xóa toàn bộ hóa đơn</button></div>
   </section>
 </div>
+<div id="dataArea" class="hidden">
+<section class="panel">
+<h2>💾 Nhập &amp; xuất dữ liệu</h2>
+<p class="lead">Sao lưu toàn bộ dữ liệu để chuyển sang máy khác hoặc khôi phục sau khi cài lại ứng dụng. Không cần tài khoản hay Internet.</p>
+<div class="wide-note"><b>Quan trọng:</b> File <b>JSON</b> chứa toàn bộ dữ liệu để nhập lại vào ứng dụng. File <b>CSV</b> dành cho Excel/Google Sheets, chỉ để xem hoặc thống kê và <b>không dùng để khôi phục</b>. File sao lưu chứa các thông tin bạn đã tự nhập, có thể bao gồm địa chỉ và liên hệ; hãy giữ tệp ở nơi riêng tư.</div>
+<h3>📦 Dữ liệu hiện có trên thiết bị này</h3>
+<div id="dataSummary" aria-live="polite"></div>
+<div class="actions"><button class="good" onclick="exportAllData()" type="button">⬇️ Xuất toàn bộ dữ liệu (.json)</button></div>
+<hr class="line"/>
+<h3>📊 Xuất bảng để xem bằng Excel</h3>
+<div class="grid"><div><label for="csvSection">Chọn nhóm dữ liệu</label><select id="csvSection"><option value="places">Danh sách địa điểm</option><option value="history">Lịch sử kế hoạch</option><option value="foodBill">Check bill gọi đồ</option><option value="foodTaxes">Thuế và phí ăn uống</option><option value="priceItems">Danh sách Check giá / combo</option><option value="pending">So sánh giá tạm lưu</option><option value="shopBill">Check bill mua sắm</option></select></div></div>
+<div class="actions"><button class="secondary" onclick="exportCsvData()" type="button">⬇️ Xuất CSV nhóm đã chọn</button></div>
+<hr class="line"/>
+<h3>📥 Nhập dữ liệu từ tệp sao lưu</h3>
+<label for="backupFile">Chọn tệp JSON đã xuất từ ứng dụng</label>
+<input id="backupFile" type="file" accept=".json,application/json" onchange="readBackupFile(this)"/>
+<div id="importPreview" aria-live="polite" class="form-row">Chưa chọn tệp để nhập.</div>
+<div class="form-row">
+<label>Chế độ nhập dữ liệu</label>
+<div class="checks transfer-modes">
+<label><input type="radio" name="importMode" value="merge" checked onchange="updateImportMode()"/> <span><b>Gộp dữ liệu</b> – giữ dữ liệu hiện có, thêm mục mới; mục trùng mã sẽ được giữ theo bản trên thiết bị.</span></label>
+<label><input type="radio" name="importMode" value="replace" onchange="updateImportMode()"/> <span><b>Thay thế toàn bộ</b> – xóa dữ liệu của cả 7 nhóm hiện tại và dùng dữ liệu từ tệp.</span></label>
+</div>
+<p id="importModeNote" class="hint">Gộp sẽ bỏ qua các dòng có mã đã tồn tại; không gộp theo tên nên mục giống tên nhưng khác mã vẫn được thêm.</p>
+<div class="actions"><button class="danger" id="confirmImport" onclick="confirmImportData()" type="button" disabled>📥 Xác nhận nhập dữ liệu</button><button class="secondary" onclick="resetImportPicker()" type="button">Bỏ chọn tệp</button></div>
+</div>
+<div id="importStatus" aria-live="polite"></div>
+</section>
+</div>
 <p class="subtle">🔒 Dữ liệu được lưu trên trình duyệt của thiết bị này. Nếu xóa dữ liệu trình duyệt hoặc dùng thiết bị khác, danh sách có thể không còn. Giá gợi ý do bạn nhập, không phải giá trực tuyến.</p>
 </main>
 <script>
@@ -123,7 +163,7 @@ let foodBill=load('food_order_bill_v2',[]),priceItems=load('shopping_price_v2',[
 let pending=load('shopping_pending_v2',[]),foodTaxes=load('food_tax_rows_v3',[]),lastResult=null,comparedIDs=[];
 let editingPlace=null,editingFood=null,editingPrice=null,editingShop=null,editingTax=null;
 function persist(){try{localStorage.setItem('food_places_v1',JSON.stringify(places));localStorage.setItem('food_history_v1',JSON.stringify(history));localStorage.setItem('food_order_bill_v2',JSON.stringify(foodBill));localStorage.setItem('shopping_price_v2',JSON.stringify(priceItems));localStorage.setItem('shopping_bill_v2',JSON.stringify(shopBill));localStorage.setItem('shopping_pending_v2',JSON.stringify(pending));localStorage.setItem('food_tax_rows_v3',JSON.stringify(foodTaxes))}catch(e){alert('Không thể lưu: bộ nhớ trình duyệt đã đầy hoặc bị chặn.')}}
-function switchMain(t){$('foodArea').classList.toggle('hidden',t!=='food');$('shopArea').classList.toggle('hidden',t!=='shop');document.querySelectorAll('[data-main]').forEach(b=>b.classList.toggle('active',b.dataset.main===t));}
+function switchMain(t){$('foodArea').classList.toggle('hidden',t!=='food');$('shopArea').classList.toggle('hidden',t!=='shop');$('dataArea').classList.toggle('hidden',t!=='data');document.querySelectorAll('[data-main]').forEach(b=>b.classList.toggle('active',b.dataset.main===t));if(t==='data')renderDataSummary();}
 function foodTab(t){switchMain('food');['plan','order','history'].forEach(x=>$('food-'+x).classList.toggle('hidden',x!==t));document.querySelectorAll('[data-foodtab]').forEach(b=>b.classList.toggle('active',b.dataset.foodtab===t));if(t==='history')renderHistory();if(t==='order')renderFoodBill();if(t==='plan')renderPlaces()}
 function shopTab(t){switchMain('shop');['price','bill'].forEach(x=>$('shop-'+x).classList.toggle('hidden',x!==t));document.querySelectorAll('[data-shoptab]').forEach(b=>b.classList.toggle('active',b.dataset.shoptab===t));if(t==='price'){renderPriceItems();renderSavedComparison()}else renderShopBill()}
 const cats=['Địa điểm chơi','Món ăn','Đồ uống'],times=['sáng','trưa','tối'],modes=['ô tô','xe máy','đi bộ'];
@@ -245,6 +285,57 @@ function saveShopInline(pid){let x=shopBill.find(z=>z.id===pid),e=$('shopedit-'+
 
 function deleteBillItem(pid){shopBill=shopBill.filter(x=>x.id!==pid);persist();renderShopBill()}
 function clearShopBill(){if(shopBill.length&&confirm('Xóa toàn bộ hóa đơn mua sắm?')){shopBill=[];persist();renderShopBill()}}
+
+// Nhập / xuất dữ liệu. Độc lập với tên miền, cho phép sao lưu và khôi phục ngoại tuyến.
+const transferKeys=['places','history','foodBill','foodTaxes','priceItems','pending','shopBill'];
+const transferStorage={places:'food_places_v1',history:'food_history_v1',foodBill:'food_order_bill_v2',foodTaxes:'food_tax_rows_v3',priceItems:'shopping_price_v2',pending:'shopping_pending_v2',shopBill:'shopping_bill_v2'};
+const transferNames={places:'Địa điểm',history:'Lịch sử kế hoạch',foodBill:'Món gọi',foodTaxes:'Thuế / phí ăn uống',priceItems:'Sản phẩm / combo',pending:'So sánh tạm lưu',shopBill:'Mặt hàng trong bill'};
+const transferCsvFields={
+ places:['id','name','category','hours','serves','fit','price','vehicles','menu','note','address','contact'],
+ history:['id','date','matched','request'],
+ foodBill:['id','name','qty','price','discount','type'],
+ foodTaxes:['id','name','value','type','base'],
+ priceItems:['id','name','qty','amount','unit','price','isCombo','comboItems','discount','discountType','tax','taxType','selected'],
+ pending:['id','date','items'],
+ shopBill:['id','name','qty','price','sourceAmount','sourceUnit','sourceNote']
+};
+let stagedBackup=null;
+function getTransferData(){return {places,history,foodBill,foodTaxes,priceItems,pending,shopBill}}
+function makeBackup(){return {format:'lai-khong-biet-an-gi-backup',version:1,exportedAt:new Date().toISOString(),app:'LẠI KHÔNG BIẾT ĂN GÌ À?',data:getTransferData()}}
+function transferFileStamp(){let d=new Date(),f=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+f(d.getMonth()+1)+'-'+f(d.getDate())+'_'+f(d.getHours())+'-'+f(d.getMinutes())}
+function saveTextFile(name,body,mime){const blob=new Blob([body],{type:mime}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
+function exportAllData(){try{saveTextFile('lai-khong-biet-an-gi-sao-luu-'+transferFileStamp()+'.json',JSON.stringify(makeBackup(),null,2),'application/json;charset=utf-8');$('importStatus').textContent='✅ Đã tạo tệp sao lưu JSON. Hãy lưu ở vị trí an toàn.'}catch(err){alert('Không thể xuất dữ liệu: '+err.message)}}
+function csvField(x){let t=x==null?'':typeof x==='object'?JSON.stringify(x):String(x);if(typeof x==='string'&&/^[\s]*[=+\-@]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"'}
+function exportCsvData(){try{let key=$('csvSection').value;if(!transferCsvFields[key])return;let fields=transferCsvFields[key],lines=[fields.map(csvField).join(',')];for(const rec of getTransferData()[key])lines.push(fields.map(k=>csvField(rec[k])).join(','));saveTextFile('lai-khong-biet-an-gi-'+key+'-'+transferFileStamp()+'.csv','\ufeff'+lines.join('\r\n'),'text/csv;charset=utf-8');$('importStatus').textContent='✅ Đã tạo tệp CSV: '+transferNames[key]+'. CSV chỉ dùng để xem hoặc thống kê.'}catch(err){alert('Không thể xuất bảng CSV: '+err.message)}}
+function renderDataSummary(){let all=getTransferData();$('dataSummary').innerHTML='<div class="summary">'+transferKeys.map(k=>'<div class="metric"><b>'+all[k].length+'</b><span>'+transferNames[k]+'</span></div>').join('')+'</div><p class="hint">Bao gồm cả dữ liệu không hiện do đang tìm kiếm/lọc. Hãy sao lưu trước khi xóa dữ liệu trình duyệt hoặc đổi thiết bị.</p>'}
+function plainObj(x){return x!==null&&typeof x==='object'&&!Array.isArray(x)}
+function shortText(x){return typeof x==='string'&&x.length<=20000}
+function validId(x){return typeof x==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(x)}
+function valNum(x,min=0){return typeof x==='number'&&Number.isFinite(x)&&x>=min&&x<=1e13}
+function validTextList(x){return Array.isArray(x)&&x.length<=100&&x.every(shortText)}
+function validMenu(x){return Array.isArray(x)&&x.length<=1000&&x.every(m=>plainObj(m)&&shortText(m.name)&&valNum(m.price))}
+function validPlace(x){return plainObj(x)&&validId(x.id)&&shortText(x.name)&&shortText(x.category)&&valNum(x.price)&&validTextList(x.serves)&&validTextList(x.vehicles)&&validMenu(x.menu||[])&&['hours','fit','address','contact','note'].every(k=>x[k]===undefined||shortText(x[k]))}
+function validHistory(x){return plainObj(x)&&validId(x.id)&&shortText(x.date)&&Array.isArray(x.matched)&&x.matched.length<=1000&&x.matched.every(validPlace)&&plainObj(x.request)&&validTextList(x.request.purpose||[])}
+function validFoodRow(x){return plainObj(x)&&validId(x.id)&&shortText(x.name)&&Number.isInteger(x.qty)&&valNum(x.qty,1)&&valNum(x.price)&&valNum(x.discount||0)&&['amount','percent'].includes(x.type||'percent')}
+function validTaxRow(x){return plainObj(x)&&validId(x.id)&&shortText(x.name)&&valNum(x.value)&&['amount','percent'].includes(x.type)&& (x.base===null||x.base===undefined||valNum(x.base))}
+function validComboPart(x){return plainObj(x)&&shortText(x.name)&&valNum(x.qty,1)&&valNum(x.amount,0.0000001)&&shortText(x.unit)}
+function validPriceRow(x){return plainObj(x)&&validId(x.id)&&shortText(x.name)&&Number.isInteger(x.qty)&&valNum(x.qty,1)&&valNum(x.amount,0.0000001)&&shortText(x.unit)&&valNum(x.price)&&valNum(x.discount||0)&&valNum(x.tax||0)&&['amount','percent'].includes(x.discountType||'percent')&&['amount','percent'].includes(x.taxType||'percent')&& (!x.isCombo||(Array.isArray(x.comboItems)&&x.comboItems.length<=1000&&x.comboItems.every(validComboPart))) }
+function validPending(x){return plainObj(x)&&validId(x.id)&&shortText(x.date)&&Array.isArray(x.items)&&x.items.length<=1000&&x.items.every(validPriceRow)}
+function validShopRow(x){return plainObj(x)&&validId(x.id)&&shortText(x.name)&&Number.isInteger(x.qty)&&valNum(x.qty,1)&&valNum(x.price)&& (x.sourceAmount===undefined||valNum(x.sourceAmount))&& (x.sourceUnit===undefined||shortText(x.sourceUnit))&& (x.sourceNote===undefined||shortText(x.sourceNote))}
+const transferChecks={places:validPlace,history:validHistory,foodBill:validFoodRow,foodTaxes:validTaxRow,priceItems:validPriceRow,pending:validPending,shopBill:validShopRow};
+function parseBackup(raw){let doc=JSON.parse(raw);if(!plainObj(doc)||doc.format!=='lai-khong-biet-an-gi-backup'||doc.version!==1||!plainObj(doc.data))throw Error('Đây không phải tệp sao lưu JSON hợp lệ của ứng dụng (phiên bản 1).');for(const key of transferKeys){let list=doc.data[key];if(!Array.isArray(list)||list.length>100000)throw Error('Thiếu hoặc sai nhóm dữ liệu: '+transferNames[key]);if(!list.every(transferChecks[key]))throw Error('Dữ liệu không hợp lệ trong nhóm: '+transferNames[key]);let ids=new Set(list.map(x=>x.id));if(ids.size!==list.length)throw Error('Tệp có mã mục bị lặp trong nhóm: '+transferNames[key])}return doc}
+function resetImportPicker(){stagedBackup=null;$('backupFile').value='';$('confirmImport').disabled=true;$('importPreview').textContent='Chưa chọn tệp để nhập.'}
+async function readBackupFile(input){stagedBackup=null;$('confirmImport').disabled=true;let file=input.files&&input.files[0];if(!file){$('importPreview').textContent='Chưa chọn tệp để nhập.';return}if(file.size>10*1024*1024){$('importPreview').innerHTML='<span class="import-warning">Tệp vượt 10 MB. Hãy chọn tệp nhỏ hơn.</span>';return}try{let doc=parseBackup(await file.text());stagedBackup=doc;$('importPreview').innerHTML='<b>✅ Tệp hợp lệ: '+safe(file.name)+'</b><p class="hint">Xuất lúc: '+safe(doc.exportedAt||'Không rõ')+'</p><div class="summary">'+transferKeys.map(k=>'<div class="metric"><b>'+doc.data[k].length+'</b><span>'+transferNames[k]+'</span></div>').join('')+'</div>';$('confirmImport').disabled=false;updateImportMode();$('importStatus').textContent=''}catch(err){$('importPreview').innerHTML='<span class="import-warning">❌ Không thể nhập: '+safe(err.message)+'</span>'}}
+function updateImportMode(){let mode=document.querySelector('input[name="importMode"]:checked')?.value;$('importModeNote').textContent=mode==='replace'?'⚠️ Thay thế sẽ xóa dữ liệu hiện tại của tất cả 7 nhóm, kể cả nhóm trống trong tệp. Hãy xuất JSON sao lưu trước!':'Gộp sẽ giữ bản hiện có nếu trùng mã; mục cùng tên nhưng khác mã vẫn được thêm.'}
+function mergeById(current,incoming){let ids=new Set(current.map(x=>x.id));return current.concat(incoming.filter(x=>{if(ids.has(x.id))return false;ids.add(x.id);return true}))}
+function confirmImportData(){if(!stagedBackup)return;let mode=document.querySelector('input[name="importMode"]:checked')?.value||'merge',current=getTransferData(),next={},added=0;for(const k of transferKeys){next[k]=mode==='replace'?stagedBackup.data[k]:mergeById(current[k],stagedBackup.data[k]);added+=next[k].length-current[k].length}let msg=mode==='replace'?'THAY THẾ TOÀN BỘ dữ liệu hiện tại bằng dữ liệu từ tệp? Thao tác này không thể hoàn tác nếu bạn chưa xuất bản sao lưu.':'Gộp '+added+' mục mới vào dữ liệu hiện có? Các mục trùng mã sẽ được giữ nguyên.';if(!confirm(msg))return;
+// Ghi các nhóm như một giao dịch có hoàn tác nếu trình duyệt báo lỗi.
+let before={};try{for(const k of transferKeys)before[k]=localStorage.getItem(transferStorage[k]);}catch(err){alert('Không thể truy cập bộ nhớ trên trình duyệt này. Hãy mở ứng dụng trong cửa sổ trình duyệt bình thường.');return}
+try{for(const k of transferKeys)localStorage.setItem(transferStorage[k],JSON.stringify(next[k]));}catch(err){for(const k of transferKeys)try{if(before[k]===null)localStorage.removeItem(transferStorage[k]);else localStorage.setItem(transferStorage[k],before[k])}catch(ignore){}alert('Không thể nhập dữ liệu (có thể bộ nhớ trình duyệt đầy). Dữ liệu cũ được cố gắng khôi phục.');return}
+places=next.places;history=next.history;foodBill=next.foodBill;foodTaxes=next.foodTaxes;priceItems=next.priceItems;pending=next.pending;shopBill=next.shopBill;lastResult=null;comparedIDs=[];editingPlace=editingFood=editingTax=editingPrice=editingShop=null;
+$('results').innerHTML='';$('compareResults').innerHTML='';$('compareActions').classList.add('hidden');
+renderPlaces();renderHistory();renderFoodBill();renderPriceItems();renderShopBill();renderSavedComparison();renderDataSummary();let total=transferKeys.reduce((s,k)=>s+next[k].length,0);$('importStatus').textContent=mode==='replace'?'✅ Đã thay thế dữ liệu thành công. Hiện có '+total+' mục trong 7 nhóm.':'✅ Đã gộp thành công '+added+' mục mới. Hiện có '+total+' mục.';resetImportPicker()}
+
 renderPlaces();renderFoodBill();renderPriceItems();renderShopBill();renderSavedComparison();
 </script>
 </body>
